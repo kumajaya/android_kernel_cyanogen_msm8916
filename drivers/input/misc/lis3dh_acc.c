@@ -82,7 +82,6 @@
 
 #define	G_MAX		17000
 #define LIS3DH_FIFO_SIZE	32
-#define LIS3DH_TIME_MS_TO_NS	1000000L
 
 #define SENSITIVITY_2G		1	/**	sensitivity scale	*/
 #define SENSITIVITY_4G		2	/**	sensitivity scale	*/
@@ -354,14 +353,6 @@ struct sensor_regulator lis3dh_acc_vreg[] = {
 
 static int lis3dh_acc_get_calibrate(struct lis3dh_acc_data *acc,
 					int *xyz);
-
-static inline s64 lis3dh_acc_get_time_ns(void)
-{
-	struct timespec ts;
-
-	get_monotonic_boottime(&ts);
-	return timespec_to_ns(&ts);
-}
 
 static unsigned int lis3dh_acc_odr_to_interval(struct lis3dh_acc_data *acc,
 				unsigned int odr)
@@ -1147,20 +1138,16 @@ static int lis3dh_acc_get_acceleration_data(struct lis3dh_acc_data *acc,
 }
 
 static void lis3dh_acc_report_values(struct lis3dh_acc_data *acc,
-					int *xyz)
+					int *xyz,
+					ktime_t *timestamp)
 {
-	ktime_t timestamp;
+	struct timespec ts = ktime_to_timespec(*timestamp);
 
-	timestamp = ktime_get_boottime();
 	input_report_abs(acc->input_dev, ABS_X, xyz[0]);
 	input_report_abs(acc->input_dev, ABS_Y, xyz[1]);
 	input_report_abs(acc->input_dev, ABS_Z, xyz[2]);
-	input_event(acc->input_dev,
-		EV_SYN, SYN_TIME_SEC,
-		ktime_to_timespec(timestamp).tv_sec);
-	input_event(acc->input_dev,
-		EV_SYN, SYN_TIME_NSEC,
-		ktime_to_timespec(timestamp).tv_nsec);
+	input_event(acc->input_dev, EV_SYN, SYN_TIME_SEC, ts.tv_sec);
+	input_event(acc->input_dev, EV_SYN, SYN_TIME_NSEC, ts.tv_nsec);
 	input_sync(acc->input_dev);
 }
 
@@ -1255,8 +1242,8 @@ static irqreturn_t lis3dh_acc_isr1(int irq, void *dev)
 	int i;
 	int fifo_cnt;
 	int xyz[3] = { 0 };
-	u64 timestamp = 0;
-	u32 time_h, time_l, time_ms;
+	ktime_t timestamp = ktime_get_boottime();
+	u32 time_ms;
 	struct lis3dh_acc_data *acc = dev;
 
 	err = lis3dh_interrupt_status(acc, &status);
@@ -1265,14 +1252,12 @@ static irqreturn_t lis3dh_acc_isr1(int irq, void *dev)
 		goto exit;
 	}
 	if (IS_FIFO_FULL(status) || IS_WATER_MARK_REACHED(status)) {
-		timestamp = lis3dh_acc_get_time_ns();
 		time_ms = lis3dh_acc_odr_to_interval(acc,
 			(acc->resume_state[RES_CTRL_REG1] >> 4));
 		fifo_cnt = lis3dh_acc_get_fifo_lvl(acc);
 		dev_dbg(&acc->client->dev, "TS: base=%lld, interval=%d fifo_cnt=%d\n",
-			timestamp, time_ms, fifo_cnt);
-		timestamp = timestamp -
-			((u64)time_ms * LIS3DH_TIME_MS_TO_NS * fifo_cnt);
+			ktime_to_ns(timestamp), time_ms, fifo_cnt);
+		timestamp = ktime_sub_us(timestamp, time_ms * fifo_cnt * 1000);
 
 		for (i = 0; i < fifo_cnt; i++) {
 			err = lis3dh_acc_get_acceleration_data(acc, xyz);
@@ -1281,16 +1266,8 @@ static irqreturn_t lis3dh_acc_isr1(int irq, void *dev)
 					"get_acceleration_data failed\n");
 				goto exit;
 			} else {
-				timestamp = timestamp +
-				((u64)time_ms * LIS3DH_TIME_MS_TO_NS);
-				time_h = (u32)((timestamp >> 32) & 0xFFFFFFFF);
-				time_l = (u32)(timestamp & 0xFFFFFFFF);
-
-				input_report_abs(acc->input_dev, ABS_RX,
-						time_h);
-				input_report_abs(acc->input_dev, ABS_RY,
-						time_l);
-				lis3dh_acc_report_values(acc, xyz);
+				timestamp = ktime_add_us(timestamp, time_ms * 1000);
+				lis3dh_acc_report_values(acc, xyz, &timestamp);
 			}
 		}
 
@@ -1314,7 +1291,7 @@ static irqreturn_t lis3dh_acc_isr1(int irq, void *dev)
 					"get_acceleration_data failed\n");
 			goto exit;
 		} else {
-			lis3dh_acc_report_values(acc, xyz);
+			lis3dh_acc_report_values(acc, xyz, &timestamp);
 		}
 	}
 exit:
@@ -1324,13 +1301,14 @@ exit:
 static irqreturn_t lis3dh_acc_isr2(int irq, void *dev)
 {
 	struct lis3dh_acc_data *acc = dev;
+	ktime_t timestamp = ktime_get_boottime();
 	int err;
 	int xyz[3] = { 0 };
 	err = lis3dh_acc_get_acceleration_data(acc, xyz);
 	if (err < 0)
 		dev_err(&acc->client->dev, "get_acceleration_data failed\n");
 	else
-		lis3dh_acc_report_values(acc, xyz);
+		lis3dh_acc_report_values(acc, xyz, &timestamp);
 
 	return IRQ_HANDLED;
 }
@@ -1828,21 +1806,19 @@ static int lis3dh_acc_flush(struct sensors_classdev *sensors_cdev)
 {
 	struct lis3dh_acc_data *acc = container_of(sensors_cdev,
 			struct lis3dh_acc_data, cdev);
-	s64 timestamp, sec, ns;
+	ktime_t timestamp = ktime_get_boottime();
 	int err;
 	int fifo_cnt;
 	int i;
 	u32 time_ms;
 	int xyz[3] = {0};
 
-	timestamp = lis3dh_acc_get_time_ns();
 	time_ms = lis3dh_acc_odr_to_interval(acc,
 			(acc->resume_state[RES_CTRL_REG1] >> 4));
 	fifo_cnt = lis3dh_acc_get_fifo_lvl(acc);
 	dev_dbg(&acc->client->dev, "TS: base=%lld, interval=%d fifo_cnt=%d\n",
-			timestamp, time_ms, fifo_cnt);
-	timestamp = timestamp -
-		((s64)time_ms * LIS3DH_TIME_MS_TO_NS * fifo_cnt);
+			ktime_to_ns(timestamp), time_ms, fifo_cnt);
+	timestamp = ktime_sub_us(timestamp, time_ms * fifo_cnt * 1000);
 
 	for (i = 0; i < fifo_cnt; i++) {
 		err = lis3dh_acc_get_acceleration_data(acc, xyz);
@@ -1851,16 +1827,8 @@ static int lis3dh_acc_flush(struct sensors_classdev *sensors_cdev)
 					"get_acceleration_data failed\n");
 			goto exit;
 		} else {
-			timestamp = timestamp +
-				(time_ms * LIS3DH_TIME_MS_TO_NS);
-			sec = timestamp;
-			ns = do_div(sec, NSEC_PER_SEC);
-			input_event(acc->input_dev, EV_SYN, SYN_TIME_SEC, sec);
-			input_event(acc->input_dev, EV_SYN, SYN_TIME_NSEC, ns);
-			input_report_abs(acc->input_dev, ABS_X, xyz[0]);
-			input_report_abs(acc->input_dev, ABS_Y, xyz[1]);
-			input_report_abs(acc->input_dev, ABS_Z, xyz[2]);
-			input_sync(acc->input_dev);
+			timestamp = ktime_add_us(timestamp, time_ms * 1000);
+			lis3dh_acc_report_values(acc, xyz, &timestamp);
 		}
 	}
 
@@ -1971,7 +1939,7 @@ static int lis3dh_latency_set(struct sensors_classdev *cdev,
 static void lis3dh_acc_input_work_func(struct work_struct *work)
 {
 	struct lis3dh_acc_data *acc;
-
+	ktime_t timestamp = ktime_get_boottime();
 	int xyz[3] = { 0 };
 	int err;
 
@@ -1983,7 +1951,7 @@ static void lis3dh_acc_input_work_func(struct work_struct *work)
 	if (err < 0)
 		dev_err(&acc->client->dev, "get_acceleration_data failed\n");
 	else
-		lis3dh_acc_report_values(acc, xyz);
+		lis3dh_acc_report_values(acc, xyz, &timestamp);
 
 	queue_delayed_work(acc->data_wq, &acc->input_work,
 		msecs_to_jiffies(acc->delay_ms));
