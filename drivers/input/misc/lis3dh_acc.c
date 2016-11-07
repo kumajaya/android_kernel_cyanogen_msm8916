@@ -1271,18 +1271,22 @@ static irqreturn_t lis3dh_acc_isr1(int irq, void *dev)
 			}
 		}
 
-		err = lis3dh_set_fifo_mode(acc->client, LIS3DH_BYPASS_MODE);
-		if (err < 0) {
-			dev_err(&acc->client->dev,
+		if (IS_FIFO_FULL(status)) {
+			err = lis3dh_set_fifo_mode(acc->client,
+						   LIS3DH_BYPASS_MODE);
+			if (err < 0) {
+				dev_err(&acc->client->dev,
 					"set fifo mode to bypass failed\n");
-			goto exit;
-		}
+				goto exit;
+			}
 
-		err = lis3dh_set_fifo_mode(acc->client, LIS3DH_FIFO_MODE);
-		if (err < 0) {
-			dev_err(&acc->client->dev,
+			err = lis3dh_set_fifo_mode(acc->client,
+						   LIS3DH_FIFO_MODE);
+			if (err < 0) {
+				dev_err(&acc->client->dev,
 					"set fifo mode to bypass failed\n");
-			goto exit;
+				goto exit;
+			}
 		}
 	} else {
 		err = lis3dh_acc_get_acceleration_data(acc, xyz);
