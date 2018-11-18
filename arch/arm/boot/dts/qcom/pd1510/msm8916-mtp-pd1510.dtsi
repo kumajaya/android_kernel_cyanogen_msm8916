@@ -240,17 +240,55 @@
 	};
 
 	i2c@78b6000 { /* BLSP1 QUP2 */
-		mpu6050@68 { /* Gyroscope and accelerometer sensor combo */
-			status = "disabled";
+		/delete-node/ mpu6050@68;
+		/delete-node/ avago@39;
+		/delete-node/ akm@c;
+
+		lis3dh_acc@18 {
+			compatible = "st,lis3dh";
+			reg = <0x18>;
+			vdd-supply = <&pm8916_l17>;
+			vddio-supply = <&pm8916_l6>;
+			interrupt-parent = <&msm_gpio>;
+			interrupts = <21 0x0>;
+			st,min-interval = <10>;
+			st,init-interval = <200>;
+			st,axis-map-x = <1>;
+			st,axis-map-y = <0>;
+			st,axis-map-z = <2>;
+			st,g-range = <2>;
+			st,negate-x = <0>;
+			st,negate-y = <1>;
+			st,negate-z = <0>;
+			st,gpio-int1 = <&msm_gpio 21 0x2002>;
 		};
 
-		avago@39 {
-			status = "disabled";
+		yamaha@2e {
+			compatible = "yamaha,yas533";
+			reg = <0x2e>;
+			vdd-supply = <&pm8916_l17>;
+			vio-supply = <&pm8916_l6>;
+			yas,position = <3>;
 		};
 
-		akm@c {
-			status = "disabled";
+		akm8963@0d {
+			compatible = "ak,ak8963";
+			reg = <0x0d>;
+			ak,layout = <4>;
+			ak,auto-report = <1>;
+			vdd-supply = <&pm8916_l17>;
+			vio-supply = <&pm8916_l6>;
 		};
+
+		akm09912@0f {
+			compatible = "ak,ak09912";
+			reg = <0x0f>;
+			ak,layout = <8>;
+			ak,auto-report = <1>;
+			vdd-supply = <&pm8916_l17>;
+			vio-supply = <&pm8916_l6>;
+		};
+
 	};
 
 	qcom,msm-imem@8600000 {
