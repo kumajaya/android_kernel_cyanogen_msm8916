@@ -1,0 +1,434 @@
+/*
+ * Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include "dsi-panel-tmotm9605a-qhd-video.dtsi"
+#include "msm8916-camera-sensor-mtp-pd1510.dtsi"
+
+/ {
+	memory {
+		pstore_reserve_mem: pstore_reserve_region@0 {
+			linux,reserve-contiguous-region;
+			linux,reserve-region;
+			linux,remove-completely;
+			reg = <0x0 0x8c400000 0x0 0x00100000>;
+			label = "pstore_reserve_mem";
+		};
+	};
+
+	aliases {
+		i2c3 = &i2c_3; /* I2C3 controller device */
+	};
+};
+
+&tlmm_pinmux {
+	gt9xx_int_pin {
+		qcom,pins = <&gp 13>;
+		qcom,num-grp-pins = <1>;
+		qcom,pin-func = <0>;
+		label = "gt9xx_int_pin";
+
+		gt9xx_int_default: gt9xx_int_default {
+			drive-strength = <2>;
+			bias-disable;
+		};
+
+		gt9xx_int_output_low: gt9xx_int_output_low {
+			output-low;
+		};
+
+		gt9xx_int_output_high: gt9xx_int_output_high {
+			output-high;
+		};
+
+		gt9xx_int_input: gt9xx_int_input {
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	pmx_i2c_3 {
+		/* CLK, DATA */
+		qcom,pins = <&gp 11>, <&gp 10>;
+		qcom,num-grp-pins = <2>;
+		qcom,pin-func = <2>;
+		label = "pmx_i2c_3";
+
+		i2c_3_active: i2c_3_active {
+			drive-strength = <2>; /* 2 MA */
+			bias-disable;		  /* No PULL */
+		};
+
+		i2c_3_sleep: i2c_3_sleep {
+			drive-strength = <2>; /* 2 MA */
+			bias-disable;		  /* No PULL */
+		};
+	};
+
+	headset_gpio_irq {
+		qcom,pins = <&gp 9>;
+		qcom,pin-func = <0>;
+		qcom,num-grp-pins = <1>;
+		label = "headset_gpio_irq";
+
+		headset_gpio_int: headset_gpio_irq_state {
+			drive-strength = <2>;
+			bias-disable = <0>;
+		};
+	};
+};
+
+&soc {
+	ramoops {
+		compatible = "ramoops";
+		status = "ok";
+
+		android,ramoops-buffer-start = <0x8c400000>;
+		android,ramoops-buffer-size = <0x100000>;
+		android,ramoops-console-size = <0x40000>;
+		android,ramoops-pmsg-size = <0x40000>;
+		android,ramoops-record-size = <0x20000>;
+		android,ramoops-dump-oops = <0x1>;
+	};
+
+	restart@4ab000 {
+		qcom,download_mode-disable;
+	};
+
+	qcom,rmtfs_sharedmem@8e580000 {
+		reg = <0x86690000 0x150000>;
+	};
+
+	qcom,wdt@b017000 {
+		qcom,bark-time = <20000>;
+		qcom,pet-time = <15000>;
+	};
+
+	qcom,ipc_router_modem_xprt {
+		/delete-property/ qcom,disable-pil-loading;
+	};
+
+	qcom,smem@86300000 {
+		qcom,smd-modem {
+			/delete-property/ qcom,not-loadable;
+		};
+	};
+
+	i2c@78b8000 {
+		smb358_otg_vreg: smb358-charger@57 {
+			compatible = "qcom,smb358-charger";
+			reg = <0x57>;
+			interrupt-parent = <&msm_gpio>;
+			interrupts = <62 8>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&smb_int_default>;
+
+			qcom,float-voltage-mv = <4360>;
+			qcom,recharge-mv = <100>;
+			qcom,recharge-disabled = <1>;
+			regulator-name = "smb358_otg_vreg";
+			qcom,thermal-mitigation = <1300 700 600 0>;
+			qcom,fastchg-current-max-ma = <1300>;
+
+			qcom,disable-apsd;
+			qcom,bms-psy-name = "bms";
+			/* qcom,iterm-disabled; */
+			qcom,iterm-ma = <150>;
+			qcom,bms-controlled-charging;
+			qcom,chg-inhibit-disabled;
+			qcom,chg-vadc = <&pm8916_vadc>;
+			qcom,chg-adc_tm = <&pm8916_adc_tm>;
+			qcom,vcc-i2c-supply = <&pm8916_l5>;
+			qcom,irq-gpio = <&msm_gpio 110 0x00>;
+
+			qcom,using-pmic-therm;
+			qcom,hot-bat-decidegc = <550>;
+			qcom,cold-bat-decidegc = <0>;
+			qcom,bat-present-decidegc = <200>;
+			/*
+			 * Below properties are used for enable JEITA
+			 */
+			qcom,warm-bat-decidegc = <450>;
+			qcom,cool-bat-decidegc = <0>;
+			qcom,warm-bat-ma = <1000>;
+			qcom,cool-bat-ma = <1000>;
+			qcom,warm-bat-mv = <4000>;
+			qcom,cool-bat-mv = <4000>;
+			status = "ok";
+		};
+	};
+
+	i2c_3: i2c@78b7000 { /* BLSP1 QUP3 */
+		compatible = "qcom,i2c-msm-v2";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg-names = "qup_phys_addr";
+		reg = <0x78b7000 0x1000>;
+		interrupt-names = "qup_irq";
+		interrupts = <0 97 0>;
+		qcom,clk-freq-out = <380000>;
+		qcom,clk-freq-in  = <19200000>;
+		clock-names = "iface_clk", "core_clk";
+		clocks = <&clock_gcc clk_gcc_blsp1_ahb_clk>,
+			<&clock_gcc clk_gcc_blsp1_qup4_i2c_apps_clk>;
+		qcom,use-pinctrl;
+		pinctrl-names = "i2c_active", "i2c_sleep";
+		pinctrl-0 = <&i2c_3_active>;
+		pinctrl-1 = <&i2c_3_sleep>;
+		qcom,noise-rjct-scl = <0>;
+		qcom,noise-rjct-sda = <0>;
+		dmas = <&dma_blsp1 8 64 0x20000020 0x20>,
+			<&dma_blsp1 9 32 0x20000020 0x20>;
+		dma-names = "tx", "rx";
+		qcom,master-id = <86>;
+	};
+
+	i2c@78b9000 { /* BLSP1 QUP5 */
+		synaptics@20 {
+			status = "disabled";
+		};
+
+		gt9xx-i2c@14 {
+			compatible = "goodix,gt9xx";
+			reg = <0x14>; 
+			status = "okay";
+			interrupt-parent = <&msm_gpio>;
+			interrupts = <13 0x2800>;
+			pinctrl-names = "default", "int-output-low","int-output-high", "int-input";
+			pinctrl-0 = <&gt9xx_int_default>;
+			pinctrl-1 = <&gt9xx_int_output_low>;
+			pinctrl-2 = <&gt9xx_int_output_high>;
+			pinctrl-3 = <&gt9xx_int_input>;
+			reset-gpios = <&msm_gpio 12 0x0>;
+			irq-gpios = <&msm_gpio 13 0x2800>;
+			irq-flags = <2>;
+			vdd_ana-supply = <&pm8916_l16>;
+			vcc_i2c-supply = <&pm8916_l6>;
+			touchscreen-max-id = <11>;
+			touchscreen-size-x = <540>;
+			touchscreen-size-y = <960>;
+			touchscreen-max-w = <512>;
+			touchscreen-max-p = <512>;
+			touchscreen-key-map = <158>, <102>, <139>;
+			goodix,type-a-report = <0>;
+			goodix,driver-send-cfg = <0>;
+			goodix,resume-in-workqueue = <0>;
+			goodix,int-sync = <1>;
+			goodix,swap-x2y = <0>;
+			goodix,esd-protect = <1>;
+			goodix,auto-update-cfg = <0>;
+			goodix,power-off-sleep = <0>;
+			goodix,pen-suppress-finger = <0>;
+		};
+	};
+
+	i2c@78ba000 { /* BLSP1 QUP6 */
+		status = "okay";
+
+		nfc-nci@e {
+			status = "disabled";
+		};
+	};
+
+	i2c@78b6000 { /* BLSP1 QUP2 */
+		mpu6050@68 { /* Gyroscope and accelerometer sensor combo */
+			status = "disabled";
+		};
+
+		avago@39 {
+			status = "disabled";
+		};
+
+		akm@c {
+			status = "disabled";
+		};
+	};
+
+	qcom,msm-imem@8600000 {
+		download_mode@0 {
+			compatible = "qcom,msm-imem-download_mode";
+			reg = <0x0 8>;
+		};
+
+		emergency_download_mode@fe0 {
+			compatible = "qcom,msm-imem-emergency_download_mode";
+			reg = <0xfe0 12>;
+		};
+	};
+
+	sound {
+		/delete-property/ qcom,msm-micbias1-ext-cap;
+		qcom,msm-hs-micbias-type = "external";
+		qcom,audio-routing =
+			"RX_BIAS", "MCLK",
+			"SPK_RX_BIAS", "MCLK",
+			"INT_LDO_H", "MCLK",
+			"MIC BIAS External", "Handset Mic",
+			"MIC BIAS External2", "Headset Mic",
+			"MIC BIAS External", "Secondary Mic",
+			"AMIC1", "MIC BIAS External",
+			"AMIC2", "MIC BIAS External2",
+			"AMIC3", "MIC BIAS External",
+			"DMIC1", "MIC BIAS Internal1",
+			"MIC BIAS Internal1", "Digital Mic1",
+			"DMIC2", "MIC BIAS Internal1",
+			"MIC BIAS Internal1", "Digital Mic2",
+			"KTV Handset Mic In", "MIC BIAS External",
+			"KTV Headset Mic In", "MIC BIAS External2";
+		pinctrl-names = "cdc_lines_act",
+				"cdc_lines_sus",
+				"cdc_lines_quat_ext_act",
+				"cdc_lines_quat_ext_sus";
+		pinctrl-0 = <&cdc_pdm_lines_act>;
+		pinctrl-1 = <&cdc_pdm_lines_sus>;
+		pinctrl-2 = <&cdc_pdm_lines_act &ext_cdc_tlmm_lines_act>;
+		pinctrl-3 = <&cdc_pdm_lines_sus &ext_cdc_tlmm_lines_sus>;
+		/delete-property/ pinctrl-4;
+		/delete-property/ pinctrl-5;
+		/delete-property/ qcom,cdc-us-euro-gpios;
+	};
+
+	qcom,ion {
+		qcom,ion-heap@21 {
+			reg = <21>;
+			qcom,ion-heap-type = "SYSTEM_CONTIG";
+		};
+	};
+
+	/delete-node/ gen-vkeys;
+
+	gpio_keys {
+		/delete-node/ camera_focus;
+		/delete-node/ camera_snapshot;
+	};
+};
+
+&cdc_pdm_lines_sus {
+	/delete-property/ bias-pull-down;
+	bias-disable;
+};
+
+&sdc2_cd_off {
+	/delete-property/ bias-disable;
+	bias-pull-up;
+};
+
+&sdc2_cmd_on {
+	drive-strength = <12>;
+};
+
+&sdhc_1 {
+	qcom,vdd-always-on;
+};
+
+&sdhc_2 {
+	qcom,clk-rates = <400000 25000000 50000000 100000000>;
+	cd-gpios = <&msm_gpio 38 0x0>;
+};
+
+&pm8916_pon {
+	qcom,pon_1 {
+		qcom,s2-type = <7>;
+	};
+
+	qcom,pon_2 {
+		qcom,support-reset = <0>;
+		qcom,s1-timer = <10256>;
+		qcom,s2-timer = <2000>;
+		qcom,s2-type = <1>;
+	};
+};
+
+&pm8916_mpps {
+	mpp@a100 { /* MPP 2 */
+		/* HR LED */
+		status = "ok";
+		qcom,mode = <4>;
+		qcom,ain-route = <1>;
+		qcom,invert = <0>;
+		qcom,output-type = <0>;
+		qcom,src-sel = <0>;
+		qcom,vin-sel = <0>;
+		qcom,master-en = <1>;
+	};
+
+	mpp@a300 { /* MPP 4 */
+		/* Backlight PWM */
+		qcom,vin-sel = <3>;
+	};
+};
+
+&pm8916_gpios {
+	gpio@c100 { /* GPIO 2 */
+		status = "disabled";
+	};
+};
+
+&pm8916_rtc {
+	qcom,qpnp-rtc-alarm-pwrup = <1>;
+};
+
+&pm8916_tombak_dig {
+	qcom,cdc-micbias-cfilt-mv = <1800000>;
+	qcom,headset-irq-gpio = <&msm_gpio 9 0>;
+	pinctrl-names = "headset_gpio_irq";
+	pinctrl-0 = <&headset_gpio_int>;
+};
+
+&pm8916_vadc {
+	chan@11 {
+		label = "usbid_vol";
+		reg = <0x11>;
+		qcom,decimation = <0>;
+		qcom,pre-div-channel-scaling = <0>;
+		qcom,calibration-type = "absolute";
+		qcom,scale-function = <0>;
+		qcom,hw-settle-time = <0>;
+		qcom,fast-avg-setup = <0>;
+	};
+};
+
+&mdss_dsi0 {
+	qcom,dsi-pref-prim-pan = <&dsi_tmotm9605a_qhd_video>;
+	qcom,platform-enable-gpio = <&msm_gpio 97 0>;
+	qcom,platform-reset-gpio = <&msm_gpio 25 0>;
+	qcom,platform-bklight-en-gpio = <&msm_gpio 8 0>;
+};
+
+/ {
+	pd1510_batterydata: qcom,battery-data {
+		/delete-node/ qcom,palladium-batterydata;
+
+		#include "batterydata-b76-atl-4v35-2260mah.dtsi"
+		#include "batterydata-desay-samsung-2260mah.dtsi"
+		#include "batterydata-atl-ds-4v35-2300mah.dtsi"
+		#include "batterydata-samsung-ds-4v35-2300mah.dtsi"
+		#include "batterydata-atl-nvt-4v35-2300mah.dtsi"
+	};
+};
+
+&pm8916_chg {
+	status = "ok";
+	qcom,resume-soc = <95>;
+	qcom,charging-disabled;
+	qcom,use-external-charger;
+};
+
+&pm8916_bms {
+	status = "ok";
+	qcom,resume-soc = <95>;
+	qcom,battery-data = <&pd1510_batterydata>;
+};
+
+&pm8916_leds {
+	status = "disabled";
+};
