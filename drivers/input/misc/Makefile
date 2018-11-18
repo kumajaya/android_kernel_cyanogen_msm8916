@@ -76,6 +76,7 @@ obj-$(CONFIG_SENSORS_CAPELLA_CM36283)	+= cm36283.o
 obj-$(CONFIG_SENSORS_MPU6050)		+= mpu6050.o
 obj-$(CONFIG_SENSORS_AKM8963)		+= akm8963.o
 obj-$(CONFIG_SENSORS_AKM09911)		+= akm09911.o
+obj-$(CONFIG_SENSORS_AKM09912)		+= akm09912.o
 obj-$(CONFIG_SENSORS_YAS532)		+= yas_mag_drv-yas532.o yas_mag_kernel.o
 obj-$(CONFIG_SENSORS_YAS533)		+= yas_mag_drv-yas532.o yas_mag_kernel.o
 obj-$(CONFIG_SENSORS_YAS537)		+= yas_mag_drv-yas537.o yas_mag_kernel.o
