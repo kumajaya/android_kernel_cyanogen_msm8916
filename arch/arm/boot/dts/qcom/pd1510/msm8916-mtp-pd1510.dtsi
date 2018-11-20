@@ -31,31 +31,6 @@
 };
 
 &tlmm_pinmux {
-	gt9xx_int_pin {
-		qcom,pins = <&gp 13>;
-		qcom,num-grp-pins = <1>;
-		qcom,pin-func = <0>;
-		label = "gt9xx_int_pin";
-
-		gt9xx_int_default: gt9xx_int_default {
-			drive-strength = <2>;
-			bias-disable;
-		};
-
-		gt9xx_int_output_low: gt9xx_int_output_low {
-			output-low;
-		};
-
-		gt9xx_int_output_high: gt9xx_int_output_high {
-			output-high;
-		};
-
-		gt9xx_int_input: gt9xx_int_input {
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
 	pmx_i2c_3 {
 		/* CLK, DATA */
 		qcom,pins = <&gp 11>, <&gp 10>;
@@ -198,36 +173,22 @@
 		};
 
 		gt9xx-i2c@14 {
-			compatible = "goodix,gt9xx";
-			reg = <0x14>; 
-			status = "okay";
+			compatible = "goodix,Goodix-TS";
+			reg = <0x14>;
 			interrupt-parent = <&msm_gpio>;
-			interrupts = <13 0x2800>;
-			pinctrl-names = "default", "int-output-low","int-output-high", "int-input";
-			pinctrl-0 = <&gt9xx_int_default>;
-			pinctrl-1 = <&gt9xx_int_output_low>;
-			pinctrl-2 = <&gt9xx_int_output_high>;
-			pinctrl-3 = <&gt9xx_int_input>;
-			reset-gpios = <&msm_gpio 12 0x0>;
-			irq-gpios = <&msm_gpio 13 0x2800>;
-			irq-flags = <2>;
-			vdd_ana-supply = <&pm8916_l16>;
+			interrupts = <13 0x2008>;
+			vdd-supply = <&pm8916_l16>;
 			vcc_i2c-supply = <&pm8916_l6>;
-			touchscreen-max-id = <11>;
-			touchscreen-size-x = <540>;
-			touchscreen-size-y = <960>;
-			touchscreen-max-w = <512>;
-			touchscreen-max-p = <512>;
-			touchscreen-key-map = <158>, <102>, <139>;
-			goodix,type-a-report = <0>;
-			goodix,driver-send-cfg = <0>;
-			goodix,resume-in-workqueue = <0>;
-			goodix,int-sync = <1>;
-			goodix,swap-x2y = <0>;
-			goodix,esd-protect = <1>;
-			goodix,auto-update-cfg = <0>;
-			goodix,power-off-sleep = <0>;
-			goodix,pen-suppress-finger = <0>;
+			pinctrl-names = "pmx_ts_active","pmx_ts_suspend";
+			pinctrl-0 = <&ts_int_active &ts_reset_active>;
+			pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+			goodix,reset-gpio = <&msm_gpio 12 0x00>;
+			goodix,display-coords = <0 0 540 960>;
+			goodix,panel-coords = <0 0 540 960>;
+			goodix,irq-gpio = <&msm_gpio 13 0x00>;
+			goodix,button-map = <158 102 139>;
+			goodix,i2c-pull-up;
+			goodix,module-name = "unknow","unknow","unknow";
 		};
 	};
 
