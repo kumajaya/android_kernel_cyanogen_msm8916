@@ -35,14 +35,15 @@
 
 &usbid_default {
 	drive-strength = <2>;
-	/delete-property/ bias-pull-up;
 	bias-pull-down;
 };
 
 &usb_otg {
+	qcom,hsusb-otg-phy-init-seq = <0x74 0x80 0x68 0x81 0x38 0x82 0x33 0x83 0xffffffff>;
 	qcom,hsusb-otg-mode = <1>;
 	qcom,usbid-gpio = <&msm_gpio 110 0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&usbid_default>;
 	vbus_otg-supply = <&smb358_otg_vreg>;
+	qcom,usbin-vadc = <&pm8916_vadc>;
 };
