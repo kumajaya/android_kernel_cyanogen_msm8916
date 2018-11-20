@@ -1,7 +1,7 @@
 #
 # Goodix GT9xx Touchscreen driver
 #
-config TOUCHSCREEN_GT9XX_PD1510
+config TOUCHSCREEN_GT9XX_PD1510_DRIVER
 	bool "Goodix touchpanel GT9xx series (Vivo PD1510 variant)"
 	depends on I2C
 	help
@@ -12,7 +12,7 @@ config TOUCHSCREEN_GT9XX_PD1510
 
 config TOUCHSCREEN_GT9XX_PD1510_UPDATE
 	tristate "Goodix GT9xx touch controller (Vivo PD1510 variant) auto update support"
-	depends on TOUCHSCREEN_GT9XX
+	depends on TOUCHSCREEN_GT9XX_PD1510_DRIVER
 	default y
 	help
 	  Enable this for support firmware update.
@@ -21,9 +21,9 @@ config TOUCHSCREEN_GT9XX_PD1510_UPDATE
 
 	  If unsure, say N.
 
-config TOUCHSCREEN_GT9XX_PD1510_TOOL
+config TOUCHSCREEN_GT9XX_PD1510_DEBUG
 	tristate "Goodix GT9xx (Vivo PD1510 variant) Tools for debuging"
-	depends on TOUCHSCREEN_GT9XX
+	depends on TOUCHSCREEN_GT9XX_PD1510_DRIVER
 	default y
 	help
 	  This implement interface support for Goodix GT9xx
