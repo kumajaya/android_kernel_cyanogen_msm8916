@@ -60,6 +60,20 @@
 			bias-disable = <0>;
 		};
 	};
+
+	lis3dh_int1_pin {
+		qcom,pins = <&gp 21>;
+		qcom,num-grp-pins = <1>;
+		label = "lis3dh_int_pin";
+		lis3dh_int1_default: int1_default {
+			drive-strength = <6>;
+			bias-pull-down;
+		};
+		lis3dh_int1_sleep: int1_sleep {
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
 };
 
 &soc {
@@ -122,8 +136,8 @@
 			qcom,chg-inhibit-disabled;
 			qcom,chg-vadc = <&pm8916_vadc>;
 			qcom,chg-adc_tm = <&pm8916_adc_tm>;
-			qcom,vcc-i2c-supply = <&pm8916_l5>;
-			qcom,irq-gpio = <&msm_gpio 110 0x00>;
+			/* qcom,vcc-i2c-supply = <&pm8916_l5>; */
+			qcom,irq-gpio = <&msm_gpio 62 0x00>;
 
 			qcom,using-pmic-therm;
 			qcom,hot-bat-decidegc = <550>;
@@ -150,11 +164,11 @@
 		reg = <0x78b7000 0x1000>;
 		interrupt-names = "qup_irq";
 		interrupts = <0 97 0>;
-		qcom,clk-freq-out = <380000>;
+		qcom,clk-freq-out = <400000>;
 		qcom,clk-freq-in  = <19200000>;
 		clock-names = "iface_clk", "core_clk";
 		clocks = <&clock_gcc clk_gcc_blsp1_ahb_clk>,
-			<&clock_gcc clk_gcc_blsp1_qup4_i2c_apps_clk>;
+			<&clock_gcc clk_gcc_blsp1_qup3_i2c_apps_clk>;
 		qcom,use-pinctrl;
 		pinctrl-names = "i2c_active", "i2c_sleep";
 		pinctrl-0 = <&i2c_3_active>;
@@ -210,6 +224,9 @@
 			reg = <0x18>;
 			vdd-supply = <&pm8916_l17>;
 			vddio-supply = <&pm8916_l6>;
+			pinctrl-names = "lis3dh_default","lis3dh_sleep";
+			pinctrl-0 = <&lis3dh_int1_default>;
+			pinctrl-1 = <&lis3dh_int1_sleep>;
 			interrupt-parent = <&msm_gpio>;
 			interrupts = <21 0x0>;
 			st,min-interval = <10>;
@@ -394,6 +411,10 @@
 		qcom,hw-settle-time = <0>;
 		qcom,fast-avg-setup = <0>;
 	};
+};
+
+&pm8916_l5 { /* For erratic touchscreen */
+	regulator-always-on;
 };
 
 &mdss_dsi0 {
