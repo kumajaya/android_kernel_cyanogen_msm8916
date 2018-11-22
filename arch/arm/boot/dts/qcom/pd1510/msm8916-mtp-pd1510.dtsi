@@ -219,6 +219,20 @@
 		/delete-node/ avago@39;
 		/delete-node/ akm@c;
 
+		taos@39 {
+			compatible = "taos,tmd2771";
+			reg = <0x39>;
+			interrupt-parent = <&msm_gpio>;
+			interrupts = <113 0x0>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&apds99xx_default>;
+			vdd-supply = <&pm8916_l17>;
+			vddio-supply = <&pm8916_l6>;
+			taos,pdrive = <3>;
+			taos,ppcount = <8>;
+			taos,irq_gpio = <113>;
+		};
+
 		lis3dh_acc@18 {
 			compatible = "st,lis3dh";
 			reg = <0x18>;
@@ -247,6 +261,7 @@
 			vdd-supply = <&pm8916_l17>;
 			vio-supply = <&pm8916_l6>;
 			yas,position = <3>;
+			status = "disabled";
 		};
 
 		akm8963@0d {
@@ -256,6 +271,7 @@
 			ak,auto-report = <1>;
 			vdd-supply = <&pm8916_l17>;
 			vio-supply = <&pm8916_l6>;
+			status = "disabled";
 		};
 
 		akm09912@0f {
@@ -265,6 +281,7 @@
 			ak,auto-report = <1>;
 			vdd-supply = <&pm8916_l17>;
 			vio-supply = <&pm8916_l6>;
+			status = "disabled";
 		};
 
 	};
