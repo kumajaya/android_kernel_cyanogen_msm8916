@@ -89,6 +89,7 @@ obj-$(CONFIG_SENSORS_MPU6880)		+= mpu6880.o
 obj-$(CONFIG_SENSORS_PA12200001)	+= pa12200001.o
 obj-$(CONFIG_SENSORS_YL_HALL)		+= coolpad_hall.o
 obj-$(CONFIG_SENSORS_YL_PARAMS)		+= yl_sensor_params.o
+obj-$(CONFIG_TMD2771_PLSENSOR)		+= tmd2771.o
 
 obj-$(CONFIG_SENSORS_BMA2X2)	+= bma2x2.o
 obj-$(CONFIG_SENSORS_LTR553)	+= ltr553.o
