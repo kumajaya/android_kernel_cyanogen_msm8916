@@ -49,18 +49,6 @@
 		};
 	};
 
-	headset_gpio_irq {
-		qcom,pins = <&gp 9>;
-		qcom,pin-func = <0>;
-		qcom,num-grp-pins = <1>;
-		label = "headset_gpio_irq";
-
-		headset_gpio_int: headset_gpio_irq_state {
-			drive-strength = <2>;
-			bias-disable = <0>;
-		};
-	};
-
 	lis3dh_int1_pin {
 		qcom,pins = <&gp 21>;
 		qcom,num-grp-pins = <1>;
@@ -72,6 +60,26 @@
 		lis3dh_int1_sleep: int1_sleep {
 			drive-strength = <2>;
 			bias-pull-down;
+		};
+	};
+
+	cross-conn-det {
+		qcom,pins = <&gp 9>;
+	};
+
+	cdc-ext-spk-pa {
+		qcom,pins = <&gp 120>;
+		qcom,num-grp-pins = <1>;
+		qcom,pin-func = <0>;
+		label = "cdc-ext-spk-pa";
+		cdc_ext_spk_pa_act: ext_spk_pa_on {
+			drive-strength = <8>;
+			output-low;
+			bias-pull-none;
+		};
+		cdc_ext_spk_pa_sus: ext_spk_pa_off {
+			drive-strength = <2>;
+			bias-disable;
 		};
 	};
 };
@@ -299,35 +307,10 @@
 	};
 
 	sound {
-		/delete-property/ qcom,msm-micbias1-ext-cap;
-		qcom,msm-hs-micbias-type = "external";
-		qcom,audio-routing =
-			"RX_BIAS", "MCLK",
-			"SPK_RX_BIAS", "MCLK",
-			"INT_LDO_H", "MCLK",
-			"MIC BIAS External", "Handset Mic",
-			"MIC BIAS External2", "Headset Mic",
-			"MIC BIAS External", "Secondary Mic",
-			"AMIC1", "MIC BIAS External",
-			"AMIC2", "MIC BIAS External2",
-			"AMIC3", "MIC BIAS External",
-			"DMIC1", "MIC BIAS Internal1",
-			"MIC BIAS Internal1", "Digital Mic1",
-			"DMIC2", "MIC BIAS Internal1",
-			"MIC BIAS Internal1", "Digital Mic2",
-			"KTV Handset Mic In", "MIC BIAS External",
-			"KTV Headset Mic In", "MIC BIAS External2";
-		pinctrl-names = "cdc_lines_act",
-				"cdc_lines_sus",
-				"cdc_lines_quat_ext_act",
-				"cdc_lines_quat_ext_sus";
-		pinctrl-0 = <&cdc_pdm_lines_act>;
-		pinctrl-1 = <&cdc_pdm_lines_sus>;
-		pinctrl-2 = <&cdc_pdm_lines_act &ext_cdc_tlmm_lines_act>;
-		pinctrl-3 = <&cdc_pdm_lines_sus &ext_cdc_tlmm_lines_sus>;
-		/delete-property/ pinctrl-4;
-		/delete-property/ pinctrl-5;
-		/delete-property/ qcom,cdc-us-euro-gpios;
+		qcom,cdc-us-euro-gpios = <&msm_gpio 9 0>;
+		qcom,msm-spk-ext-pa = <&msm_gpio 120 0>;
+		pinctrl-0 = <&cdc_pdm_lines_act &cdc_ext_spk_pa_act>;
+		pinctrl-1 = <&cdc_pdm_lines_sus &cdc_ext_spk_pa_sus>;
 	};
 
 	qcom,ion {
@@ -412,9 +395,6 @@
 
 &pm8916_tombak_dig {
 	qcom,cdc-micbias-cfilt-mv = <1800000>;
-	qcom,headset-irq-gpio = <&msm_gpio 9 0>;
-	pinctrl-names = "headset_gpio_irq";
-	pinctrl-0 = <&headset_gpio_int>;
 };
 
 &pm8916_vadc {
