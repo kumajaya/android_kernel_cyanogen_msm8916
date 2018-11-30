@@ -411,6 +411,10 @@ static u8 gtp_get_points(struct goodix_ts_data *ts,
 		if (ts->pdata->swap_x2y)
 			GTP_SWAP(points[i].x, points[i].y);
 
+#ifdef CONFIG_MACH_PD1510
+		points[i].y = (1031*points[i].y)/960;
+#endif
+
 		dev_dbg(&ts->client->dev, "[%d][%d %d %d]\n",
 			points[i].id, points[i].x, points[i].y, points[i].p);
 
@@ -2089,6 +2093,13 @@ static int gtp_probe(struct i2c_client *client, const struct i2c_device_id *id)
 		goto exit_free_client_data;
 	}
 
+	ret = gtp_power_on(ts);
+	if (ret) {
+		dev_err(&client->dev, "Failed power on device\n");
+		ret = -EINVAL;
+		goto exit_deinit_power;
+	}
+
 	ret = gtp_pinctrl_init(ts);
 	if (ret < 0) {
 		/* if define pinctrl must define the following state
@@ -2108,13 +2119,6 @@ static int gtp_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	/*wait for discharging power, which from i2c pull-up flow backward*/
 	gtp_rst_output(ts, 0);
 	msleep(DELAY_FOR_DISCHARGING);
-
-	ret = gtp_power_on(ts);
-	if (ret) {
-		dev_err(&client->dev, "Failed power on device\n");
-		ret = -EINVAL;
-		goto exit_free_io_port;
-	}
 
 	gtp_reset_guitar(ts->client, 20);
 
@@ -2193,7 +2197,6 @@ exit_unreg_input_dev:
 	input_unregister_device(ts->input_dev);
 exit_power_off:
 	gtp_power_off(ts);
-exit_free_io_port:
 	if (gpio_is_valid(ts->pdata->rst_gpio))
 		gpio_free(ts->pdata->rst_gpio);
 	if (gpio_is_valid(ts->pdata->irq_gpio))
