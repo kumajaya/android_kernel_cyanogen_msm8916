@@ -440,7 +440,16 @@
 		};
 	};
 
-	/delete-node/ gen-vkeys;
+	gen-vkeys {
+		compatible = "qcom,gen-vkeys";
+		label = "gt9xx_ts";
+		qcom,disp-maxx = <540>;
+		qcom,disp-maxy = <960>;
+		qcom,panel-maxx = <540>;
+		qcom,panel-maxy = <1031>;
+		qcom,key-codes = <158 102 139>;
+		qcom,y-offset = <0>;
+	};
 
 	gpio_keys {
 		/delete-node/ camera_focus;
