@@ -44,11 +44,6 @@ static struct input_polled_dev *alps_idev;
 #define ALPS_INPUT_DEVICE_NAME	"alps_compass"
 #define ALPS_IDEV_LOG_TAG	"[ALPS_IDEV], "
 
-#define EVENT_TYPE_ACCEL_X		ABS_X
-#define EVENT_TYPE_ACCEL_Y		ABS_Y
-#define EVENT_TYPE_ACCEL_Z		ABS_Z
-#define EVENT_TYPE_ACCEL_STATUS		ABS_THROTTLE
-
 #define EVENT_TYPE_MAGV_X		ABS_RX
 #define EVENT_TYPE_MAGV_Y		ABS_RY
 #define EVENT_TYPE_MAGV_Z		ABS_RZ
@@ -81,27 +76,6 @@ static long alps_ss_ioctl(struct file *filp,
 	int tmpval;
 
 	switch (cmd) {
-	case ALPSIO_SS_SET_ACCACTIVATE:
-		ret = copy_from_user(&tmpval, argp, sizeof(tmpval));
-		if (ret) {
-			dev_err(&alps_idev->input->dev, ALPS_IDEV_LOG_TAG
-				"error:"
-				" alps_ss_ioctl(ALPSIO_SS_SET_ACCACTIVATE)\n");
-			return -EFAULT;
-		}
-		dev_dbg(&alps_idev->input->dev, ALPS_IDEV_LOG_TAG
-			"alps_ss_ioctl(ALPSIO_SS_SET_ACCACTIVATE), val = %d\n",
-			tmpval);
-		mutex_lock(&alps_lock);
-		if (tmpval)
-			g_active |= ACTIVE_SS_ACC;
-		else
-			g_active &= ~ACTIVE_SS_ACC;
-		if (!((tmpval == 0) && (g_active & ACTIVE_SS_ORI)))
-			accsns_activate(1, tmpval, 0);
-		mutex_unlock(&alps_lock);
-		break;
-
 	case ALPSIO_SS_SET_MAGACTIVATE:
 		ret = copy_from_user(&tmpval, argp, sizeof(tmpval));
 		if (ret) {
@@ -123,29 +97,6 @@ static long alps_ss_ioctl(struct file *filp,
 		mutex_unlock(&alps_lock);
 		break;
 
-	case ALPSIO_SS_SET_ORIACTIVATE:
-		ret = copy_from_user(&tmpval, argp, sizeof(tmpval));
-		if (ret) {
-			dev_err(&alps_idev->input->dev, ALPS_IDEV_LOG_TAG
-				"error:"
-				" alps_ss_ioctl(ALPSIO_SS_SET_ORIACTIVATE)\n");
-			return -EFAULT;
-		}
-		dev_dbg(&alps_idev->input->dev, ALPS_IDEV_LOG_TAG
-			"alps_ss_ioctl(ALPSIO_SS_SET_ORIACTIVATE), val = %d\n",
-			tmpval);
-		mutex_lock(&alps_lock);
-		if (tmpval)
-			g_active |= ACTIVE_SS_ORI;
-		else
-			g_active &= ~ACTIVE_SS_ORI;
-		if (!((tmpval == 0) && (g_active & ACTIVE_SS_ACC)))
-			accsns_activate(1, tmpval, 0);
-		if (!((tmpval == 0) && (g_active & ACTIVE_SS_MAG)))
-			hscdtd_activate(1, tmpval, delay);
-		mutex_unlock(&alps_lock);
-		break;
-
 	case ALPSIO_SS_SET_DELAY:
 		ret = copy_from_user(&tmpval, argp, sizeof(tmpval));
 		if (ret) {
@@ -154,21 +105,14 @@ static long alps_ss_ioctl(struct file *filp,
 			return -EFAULT;
 		}
 		mutex_lock(&alps_lock);
-		if (g_active == ACTIVE_SS_ACC) {
-			if (tmpval < 10)
-				tmpval = 10;
-			else if (tmpval > 200)
-				tmpval = 200;
-		} else {
-			if (tmpval <= 10)
-				tmpval = 10;
-			else if (tmpval <= 20)
-				tmpval = 20;
-			else if (tmpval <= 70)
-				tmpval = 50;
-			else
-				tmpval = 100;
-		}
+		if (tmpval <= 10)
+			tmpval = 10;
+		else if (tmpval <= 20)
+			tmpval = 20;
+		else if (tmpval <= 70)
+			tmpval = 50;
+		else
+			tmpval = 100;
 		delay = tmpval;
 		if (g_active & (ACTIVE_SS_MAG | ACTIVE_SS_ORI))
 			hscdtd_activate(1, 1, delay);
@@ -477,16 +421,6 @@ static struct early_suspend alps_idev_early_suspend_handler = {
 /*--------------------------------------------------------------------------
  * input device
  *--------------------------------------------------------------------------*/
-static void accsns_poll(struct input_dev *idev)
-{
-	int xyz[3];
-
-	if (accsns_get_acceleration_data(xyz) == 0) {
-		sns_hw_data.acc[0] = 1;
-		memcpy(&sns_hw_data.acc[1], xyz, sizeof(xyz));
-	}
-}
-
 static void magsns_poll(struct input_dev *idev)
 {
 	int xyz[3];
@@ -507,12 +441,9 @@ static void alps_poll(struct input_polled_dev *dev)
 		memset(&sns_hw_data, 0, sizeof(sns_hw_data));
 		if (g_active & (ACTIVE_SS_MAG | ACTIVE_SS_ORI))
 			magsns_poll(idev);
-		if (g_active & (ACTIVE_SS_ACC | ACTIVE_SS_ORI))
-			accsns_poll(idev);
 		if (g_active &
-		    (ACTIVE_SS_ACC | ACTIVE_SS_MAG | ACTIVE_SS_ORI)) {
-			if ((sns_hw_data.acc[0] == 1) ||
-			    (sns_hw_data.mag[0] == 1)) {
+		    (ACTIVE_SS_MAG | ACTIVE_SS_ORI)) {
+			if (sns_hw_data.mag[0] == 1) {
 				atomic_set(&data_ready, 1);
 				wake_up(&data_ready_wq);
 			}
@@ -524,20 +455,6 @@ static void alps_poll(struct input_polled_dev *dev)
 static void report_value(void)
 {
 	if (!g_suspend) {
-		if ((g_active & ACTIVE_SS_ACC) && sns_sw_data.acc[0]) {
-			input_report_abs(alps_idev->input,
-					 EVENT_TYPE_ACCEL_X,
-					 sns_sw_data.acc[1]);
-			input_report_abs(alps_idev->input, EVENT_TYPE_ACCEL_Y,
-					 sns_sw_data.acc[2]);
-			input_report_abs(alps_idev->input, EVENT_TYPE_ACCEL_Z,
-					 sns_sw_data.acc[3]);
-			input_report_abs(alps_idev->input,
-					 EVENT_TYPE_ACCEL_STATUS,
-					 sns_sw_data.acc[4]);
-			alps_idev->input->sync = 0;
-			input_event(alps_idev->input, EV_SYN, SYN_REPORT, 1);
-		}
 		if ((g_active & ACTIVE_SS_MAG) && sns_sw_data.mag[0]) {
 			input_report_abs(alps_idev->input,
 					 EVENT_TYPE_MAGV_X, sns_sw_data.mag[1]);
@@ -548,7 +465,7 @@ static void report_value(void)
 			input_report_abs(alps_idev->input,
 					 EVENT_TYPE_MAGV_STATUS,
 					 sns_sw_data.mag[4]);
-			alps_idev->input->sync = 0;
+			input_sync(alps_idev->input);
 			input_event(alps_idev->input, EV_SYN, SYN_REPORT, 2);
 		}
 		if ((g_active & ACTIVE_SS_ORI) && sns_sw_data.ori[0]) {
@@ -561,7 +478,7 @@ static void report_value(void)
 			input_report_abs(alps_idev->input,
 					 EVENT_TYPE_ORIENT_STATUS,
 					 sns_sw_data.ori[4]);
-			alps_idev->input->sync = 0;
+			input_sync(alps_idev->input);
 			input_event(alps_idev->input, EV_SYN, SYN_REPORT, 3);
 		}
 	}
@@ -593,11 +510,6 @@ static int __init alps_init(void)
 	idev->name = ALPS_INPUT_DEVICE_NAME;
 	idev->id.bustype = BUS_I2C;
 	idev->evbit[0] = BIT_MASK(EV_ABS);
-
-	input_set_abs_params(idev, EVENT_TYPE_ACCEL_X, -2048, 2048, 0, 0);
-	input_set_abs_params(idev, EVENT_TYPE_ACCEL_Y, -2048, 2048, 0, 0);
-	input_set_abs_params(idev, EVENT_TYPE_ACCEL_Z, -2048, 2048, 0, 0);
-	input_set_abs_params(idev, EVENT_TYPE_ACCEL_STATUS, 0, 3, 0, 0);
 
 	input_set_abs_params(idev, EVENT_TYPE_MAGV_X,
 			     -_HSCDTD_RANGE, _HSCDTD_RANGE, 0, 0);

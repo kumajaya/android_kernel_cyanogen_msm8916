@@ -541,7 +541,7 @@ static int hscdtd_probe(struct i2c_client *client,
 	tcs_thr = HSCDTD_TCS_TIME / atomic_read(&delay);
 	if (client->dev.of_node) {
 		np = client->dev.of_node;
-		ret = of_property_read_u32(np, "orientation", &val);
+		ret = of_property_read_u32(np, "alps,orientation", &val);
 		if (!ret)
 			mag_ori = val;
 		else
@@ -575,7 +575,7 @@ static int hscdtd_remove(struct i2c_client *client)
  * module
  *--------------------------------------------------------------------------*/
 static const struct of_device_id hscdtd007a_of_match[] = {
-	{.compatible = "bcm,hscdtd007a",},
+	{.compatible = "alps,hscdtd007a",},
 	{},
 };
 

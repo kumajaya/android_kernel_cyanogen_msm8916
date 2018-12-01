@@ -18,10 +18,8 @@
 #ifndef ___ALPS_INPUT_H_INCLUDED
 #define ___ALPS_INPUT_H_INCLUDED
 
-extern int accsns_get_acceleration_data(int *xyz);
 extern int hscdtd_get_magnetic_field_data(int *xyz);
 extern void hscdtd_activate(int flgatm, int flg, int dtime);
-extern void accsns_activate(int flgatm, int flg, int dtime);
 extern int hscdtd_self_test_a(void);
 extern int hscdtd_self_test_b(void);
 extern int hscdtd_get_hardware_data(int *xyz);
