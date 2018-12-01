@@ -1,0 +1,24 @@
+menu  "ALPS e-compass sensor fusion support"
+	depends on I2C && INPUT_POLLDEV
+
+config SENSORS_HSCD_INPUT
+	tristate "ALPS input infrastructure"
+	default n
+        help
+		This option enables alps input
+		infrastructure
+
+                If you say yes here, you will enable
+                ALPS own input
+
+config SENSORS_HSCDTD007A
+	depends on SENSORS_HSCD_INPUT
+	tristate "ALPS geomagnetic sensor HSCDTD007/HSCDTD008"
+	default n
+        help
+		This option enables hscd alps HSCDTD007a
+		magnetometer driver.
+
+		If you say yes, you will get support for
+		HSCDTD007 and HSCDTD008.
+endmenu
