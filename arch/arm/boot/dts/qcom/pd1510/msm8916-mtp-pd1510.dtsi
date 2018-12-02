@@ -383,6 +383,14 @@
 			st,gpio-int1 = <&msm_gpio 21 0x2002>;
 		};
 
+		alps007@0c {
+			compatible = "alps,hscdtd007a";
+			reg = <0xc>;
+			alps,orientation = <5>;
+			vdd-supply = <&pm8916_l17>;
+			vio-supply = <&pm8916_l6>;
+		};
+
 		yamaha@2e {
 			compatible = "yamaha,yas533";
 			reg = <0x2e>;
