@@ -30,6 +30,7 @@
 #include <linux/of.h>
 #include <linux/of_fdt.h>
 #include <linux/of_platform.h>
+#include <linux/regulator/consumer.h>
 
 #define I2C_RETRIES		5
 
@@ -477,6 +478,109 @@ static int hscdtd_register_init(void)
 	return ret;
 }
 
+struct sensor_regulator {
+	struct regulator *vreg;
+	const char *name;
+	u32	min_uV;
+	u32	max_uV;
+};
+
+struct sensor_regulator hscdtd_vreg[] = {
+	{NULL, "vdd", 1700000, 3600000},
+	{NULL, "vio", 1700000, 3600000},
+};
+
+static int hscdtd_config_regulator(struct i2c_client *client, bool on)
+{
+	int rc = 0, i;
+	int num_reg = sizeof(hscdtd_vreg) / sizeof(struct sensor_regulator);
+
+	if (on) {
+		for (i = 0; i < num_reg; i++) {
+			hscdtd_vreg[i].vreg =
+				regulator_get(&client->dev,
+				hscdtd_vreg[i].name);
+			if (IS_ERR(hscdtd_vreg[i].vreg)) {
+				rc = PTR_ERR(hscdtd_vreg[i].vreg);
+				dev_err(&client->dev,
+					"Regulator(%s) get failed rc=%d\n",
+					hscdtd_vreg[i].name, rc);
+				hscdtd_vreg[i].vreg = NULL;
+				goto deinit_vregs;
+			}
+
+			if (regulator_count_voltages(
+				hscdtd_vreg[i].vreg) > 0) {
+				rc = regulator_set_voltage(
+					hscdtd_vreg[i].vreg,
+					hscdtd_vreg[i].min_uV,
+					hscdtd_vreg[i].max_uV);
+				if (rc) {
+					dev_err(&client->dev,
+					"Regulator(%s)Set voltage failed rc=%d\n",
+					hscdtd_vreg[i].name, rc);
+					regulator_put(hscdtd_vreg[i].vreg);
+					hscdtd_vreg[i].vreg = NULL;
+					goto deinit_vregs;
+				}
+			}
+		}
+		return rc;
+	} else {
+		i = num_reg;
+		goto deinit_vregs;
+	}
+
+deinit_vregs:
+	while (--i >= 0) {
+		if (!IS_ERR_OR_NULL(hscdtd_vreg[i].vreg)) {
+			regulator_put(hscdtd_vreg[i].vreg);
+			hscdtd_vreg[i].vreg = NULL;
+		}
+	}
+	return rc;
+}
+
+static int hscdtd_set_regulator(struct i2c_client *client, bool on)
+{
+	int rc = 0, i;
+	int num_reg = sizeof(hscdtd_vreg) / sizeof(struct sensor_regulator);
+
+	if (on) {
+		for (i = 0; i < num_reg; i++) {
+			if (!IS_ERR_OR_NULL(hscdtd_vreg[i].vreg)) {
+				rc = regulator_enable(hscdtd_vreg[i].vreg);
+				if (rc) {
+					dev_err(&client->dev,
+					"Enable regulator(%s) failed rc=%d\n",
+					hscdtd_vreg[i].name, rc);
+					goto disable_regulator;
+				}
+			}
+		}
+		usleep_range(35000, 70000); // A little bit delay for start-up
+		return rc;
+	} else {
+		for (i = (num_reg - 1); i >= 0; i--) {
+			if (!IS_ERR_OR_NULL(hscdtd_vreg[i].vreg)) {
+				rc = regulator_disable(hscdtd_vreg[i].vreg);
+				if (rc)
+					dev_err(&client->dev,
+					"Disable regulator(%s) failed rc=%d\n",
+					hscdtd_vreg[i].name, rc);
+			}
+		}
+		return 0;
+	}
+
+disable_regulator:
+	while (--i >= 0) {
+		if (!IS_ERR_OR_NULL(hscdtd_vreg[i].vreg))
+			regulator_disable(hscdtd_vreg[i].vreg);
+	}
+	return rc;
+}
+
 /*--------------------------------------------------------------------------
  * suspend/resume function
  *--------------------------------------------------------------------------*/
@@ -485,12 +589,14 @@ static int hscdtd_suspend(struct i2c_client *client, pm_message_t mesg)
 	dev_dbg(&client->adapter->dev, HSCDTD_LOG_TAG "%s\n", __func__);
 	atomic_set(&flgsuspend, 1);
 	hscdtd_activate(0, 0, atomic_read(&delay));
+	hscdtd_set_regulator(client, false);
 	return 0;
 }
 
 static int hscdtd_resume(struct i2c_client *client)
 {
 	dev_dbg(&client->adapter->dev, HSCDTD_LOG_TAG "%s\n", __func__);
+	hscdtd_set_regulator(client, true);
 	atomic_set(&flgsuspend, 0);
 	hscdtd_activate(0, atomic_read(&flgena), atomic_read(&delay));
 	return 0;
@@ -530,6 +636,19 @@ static int hscdtd_probe(struct i2c_client *client,
 
 	client_hscdtd = client;
 
+	ret = hscdtd_config_regulator(client, true);
+	if (ret < 0) {
+		dev_err(&client->dev, "Configure power failed: %d\n", ret);
+		return ret;
+	}
+
+	ret = hscdtd_set_regulator(client, true);
+	if (ret < 0) {
+		dev_err(&client->dev,
+				"Power on failed: %d\n", ret);
+		return ret;
+	}
+
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	register_early_suspend(&hscdtd_early_suspend_handler);
 #endif
@@ -567,6 +686,8 @@ static int hscdtd_remove(struct i2c_client *client)
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	unregister_early_suspend(&hscdtd_early_suspend_handler);
 #endif
+	hscdtd_set_regulator(client, false);
+	hscdtd_config_regulator(client, false);
 	client_hscdtd = NULL;
 	return 0;
 }
