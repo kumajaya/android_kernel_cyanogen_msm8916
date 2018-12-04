@@ -71,10 +71,17 @@
 #define YAS_MSM_SENSOR_POWER	"0.28"
 #endif
 
+#ifdef CONFIG_MACH_PD1510
+#define YAS537_VDD_MIN_UV  2850000
+#define YAS537_VDD_MAX_UV  2850000
+#define YAS537_VIO_MIN_UV  1800000
+#define YAS537_VIO_MAX_UV  1800000
+#else
 #define YAS537_VDD_MIN_UV  2000000
 #define YAS537_VDD_MAX_UV  3300000
 #define YAS537_VIO_MIN_UV  1750000
 #define YAS537_VIO_MAX_UV  1950000
+#endif
 
 struct yas537_platform_data {
 	int (*init)(void);
