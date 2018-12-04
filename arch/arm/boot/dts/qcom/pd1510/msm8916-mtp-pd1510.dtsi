@@ -348,7 +348,7 @@
 		/delete-node/ akm@c;
 
 		taos@39 {
-			compatible = "taos,tmd2771";
+			compatible = "amstaos,tmd2772";
 			reg = <0x39>;
 			interrupt-parent = <&msm_gpio>;
 			interrupts = <113 0x0>;
@@ -356,9 +356,11 @@
 			pinctrl-0 = <&apds99xx_default>;
 			vdd-supply = <&pm8916_l17>;
 			vddio-supply = <&pm8916_l6>;
-			taos,pdrive = <3>;
+			/*taos,pdrive = <3>;
 			taos,ppcount = <8>;
-			taos,irq_gpio = <113>;
+			taos,irq_gpio = <113>;*/
+			amstaos,prox_diode = <0x20>;
+			amstaos,prox_power = <0x00>;
 		};
 
 		lis3dh_acc@18 {
@@ -381,6 +383,7 @@
 			st,negate-y = <1>;
 			st,negate-z = <0>;
 			st,gpio-int1 = <&msm_gpio 21 0x2002>;
+			status = "disabled";
 		};
 
 		alps007@0c {
