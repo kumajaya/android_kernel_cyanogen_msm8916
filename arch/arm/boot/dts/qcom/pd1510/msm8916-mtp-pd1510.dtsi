@@ -400,7 +400,6 @@
 			vdd-supply = <&pm8916_l17>;
 			vio-supply = <&pm8916_l6>;
 			yas,position = <3>;
-			status = "disabled";
 		};
 
 		akm8963@0d {
