@@ -30,6 +30,7 @@
 #include <linux/iio/events.h>
 #include <linux/iio/iio.h>
 #include <linux/iio/sysfs.h>
+#include <linux/regulator/consumer.h>
 #include "tsl2x7x.h"
 
 /* Cal defs*/
@@ -181,6 +182,9 @@ struct tsl2X7X_chip {
 	struct mutex prox_mutex;
 	struct mutex als_mutex;
 	struct i2c_client *client;
+	struct regulator *vdd_supply;
+	struct regulator *vddio_supply;
+	bool regulators_enabled;
 	u16 prox_data;
 	struct tsl2x7x_als_info als_cur_info;
 	struct tsl2x7x_settings tsl2x7x_settings;
@@ -540,6 +544,18 @@ prox_poll_err:
 	return chip->prox_data;
 }
 
+#ifdef CONFIG_OF
+static void tsl2772_parse_dt(struct tsl2X7X_chip *chip)
+{
+	struct device_node *of_node = chip->client->dev.of_node;
+
+	of_property_read_u32(of_node, "amstaos,prox_diode",
+			     &chip->tsl2x7x_settings.prox_diode);
+	of_property_read_u32(of_node, "amstaos,prox_power",
+			     &chip->tsl2x7x_settings.prox_power);
+}
+#endif
+
 /**
  * tsl2x7x_defaults() - Populates the device nominal operating parameters
  *                      with those provided by a 'platform' data struct or
@@ -568,6 +584,10 @@ static void tsl2x7x_defaults(struct tsl2X7X_chip *chip)
 		memcpy(chip->tsl2x7x_device_lux,
 		(struct tsl2x7x_lux *)tsl2x7x_default_lux_table_group[chip->id],
 				MAX_DEFAULT_TABLE_BYTES);
+
+#ifdef CONFIG_OF
+	tsl2772_parse_dt(chip);
+#endif
 }
 
 /**
@@ -636,6 +656,46 @@ static int tsl2x7x_als_calibrate(struct iio_dev *indio_dev)
 	return (int) gain_trim_val;
 }
 
+static int tsl2772_enable_regulators(struct tsl2X7X_chip *chip)
+{
+	int ret;
+
+	ret = regulator_enable(chip->vddio_supply);
+	if (ret < 0) {
+		dev_err(&chip->client->dev, "Failed to enable regulator: %d\n",
+			ret);
+		return ret;
+	}
+
+	ret = regulator_enable(chip->vdd_supply);
+	if (ret < 0) {
+		regulator_disable(chip->vddio_supply);
+		dev_err(&chip->client->dev, "Failed to enable regulator: %d\n",
+			ret);
+		return ret;
+	}
+
+	chip->regulators_enabled = true;
+
+	return 0;
+}
+
+static void tsl2772_disable_regulators(struct tsl2X7X_chip *chip)
+{
+	if (!chip->regulators_enabled)
+		return;
+
+	regulator_disable(chip->vdd_supply);
+	regulator_disable(chip->vddio_supply);
+
+	chip->regulators_enabled = false;
+}
+
+static void tsl2772_disable_regulators_action(void *_data)
+{
+	tsl2772_disable_regulators(_data);
+}
+
 static int tsl2x7x_chip_on(struct iio_dev *indio_dev)
 {
 	int i;
@@ -699,12 +759,17 @@ static int tsl2x7x_chip_on(struct iio_dev *indio_dev)
 	/* Set the gain based on tsl2x7x_settings struct */
 	chip->tsl2x7x_config[TSL2X7X_GAIN] =
 		(chip->tsl2x7x_settings.als_gain |
-			(TSL2X7X_mA100 | TSL2X7X_DIODE1)
-			| ((chip->tsl2x7x_settings.prox_gain) << 2));
+			(chip->tsl2x7x_settings.prox_power |
+				chip->tsl2x7x_settings.prox_power)
+				| ((chip->tsl2x7x_settings.prox_gain) << 2));
 
 	/* set chip struct re scaling and saturation */
 	chip->als_saturation = als_count * 922; /* 90% of full scale */
 	chip->als_time_scale = (als_time + 25) / 50;
+
+	ret = tsl2772_enable_regulators(chip);
+	if (ret < 0)
+		return ret;
 
 	/* TSL2X7X Specific power-on / adc enable sequence
 	 * Power on the device 1st. */
@@ -792,6 +857,7 @@ static int tsl2x7x_chip_off(struct iio_dev *indio_dev)
 	if (chip->pdata && chip->pdata->power_off)
 		chip->pdata->power_off(chip->client);
 
+	tsl2772_disable_regulators(chip);
 	return ret;
 }
 
@@ -1863,6 +1929,38 @@ static int tsl2x7x_probe(struct i2c_client *clientp,
 	chip->client = clientp;
 	i2c_set_clientdata(clientp, indio_dev);
 
+	chip->vddio_supply = devm_regulator_get(&clientp->dev, "vddio");
+	if (IS_ERR(chip->vddio_supply)) {
+		if (PTR_ERR(chip->vddio_supply) != -EPROBE_DEFER)
+			dev_err(&clientp->dev,
+				"Failed to get vddio regulator %d\n",
+				(int)PTR_ERR(chip->vddio_supply));
+
+		return PTR_ERR(chip->vddio_supply);
+	}
+
+	chip->vdd_supply = devm_regulator_get(&clientp->dev, "vdd");
+	if (IS_ERR(chip->vdd_supply)) {
+		if (PTR_ERR(chip->vdd_supply) != -EPROBE_DEFER)
+			dev_err(&clientp->dev,
+				"Failed to get vdd regulator %d\n",
+				(int)PTR_ERR(chip->vdd_supply));
+
+		return PTR_ERR(chip->vdd_supply);
+	}
+
+	ret = devm_add_action(&clientp->dev, tsl2772_disable_regulators_action,
+			      chip);
+	if (ret < 0) {
+		tsl2772_disable_regulators_action(chip);
+		dev_err(&clientp->dev, "Failed to setup regulator cleanup action %d\n",
+			ret);
+		return ret;
+	}
+
+	/* Make sure the chip is on */
+	tsl2x7x_chip_on(indio_dev);
+
 	ret = tsl2x7x_i2c_read(chip->client,
 		TSL2X7X_CHIPID, &device_id);
 	if (ret < 0)
@@ -1918,8 +2016,6 @@ static int tsl2x7x_probe(struct i2c_client *clientp,
 
 	/* Load up the defaults */
 	tsl2x7x_defaults(chip);
-	/* Make sure the chip is on */
-	tsl2x7x_chip_on(indio_dev);
 
 	ret = iio_device_register(indio_dev);
 	if (ret) {
@@ -2008,6 +2104,21 @@ static struct i2c_device_id tsl2x7x_idtable[] = {
 
 MODULE_DEVICE_TABLE(i2c, tsl2x7x_idtable);
 
+static const struct of_device_id tsl2x7x_of_match[] = {
+	{ .compatible = "amstaos,tsl2571" },
+	{ .compatible = "amstaos,tsl2671" },
+	{ .compatible = "amstaos,tmd2671" },
+	{ .compatible = "amstaos,tsl2771" },
+	{ .compatible = "amstaos,tmd2771" },
+	{ .compatible = "amstaos,tsl2572" },
+	{ .compatible = "amstaos,tsl2672" },
+	{ .compatible = "amstaos,tmd2672" },
+	{ .compatible = "amstaos,tsl2772" },
+	{ .compatible = "amstaos,tmd2772" },
+	{}
+};
+MODULE_DEVICE_TABLE(of, tsl2x7x_of_match);
+
 static const struct dev_pm_ops tsl2x7x_pm_ops = {
 	.suspend = tsl2x7x_suspend,
 	.resume  = tsl2x7x_resume,
@@ -2017,6 +2128,7 @@ static const struct dev_pm_ops tsl2x7x_pm_ops = {
 static struct i2c_driver tsl2x7x_driver = {
 	.driver = {
 		.name = "tsl2x7x",
+		.of_match_table = tsl2x7x_of_match,
 		.pm = &tsl2x7x_pm_ops,
 	},
 	.id_table = tsl2x7x_idtable,
