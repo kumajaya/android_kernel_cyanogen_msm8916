@@ -486,8 +486,13 @@ struct sensor_regulator {
 };
 
 struct sensor_regulator hscdtd_vreg[] = {
+#ifdef CONFIG_MACH_PD1510
+	{NULL, "vdd", 2850000, 2850000},
+	{NULL, "vio", 1800000, 1800000},
+#else
 	{NULL, "vdd", 1700000, 3600000},
 	{NULL, "vio", 1700000, 3600000},
+#endif
 };
 
 static int hscdtd_config_regulator(struct i2c_client *client, bool on)
