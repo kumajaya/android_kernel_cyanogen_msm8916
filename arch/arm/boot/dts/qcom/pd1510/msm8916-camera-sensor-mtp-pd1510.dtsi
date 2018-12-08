@@ -110,7 +110,6 @@
 		cam_vio-supply = <&pm8916_l6>;
 		cam_vaf-supply = <&pm8916_l10>;
 		qcom,cam-vreg-name = "cam_vana", "cam_vdig", "cam_vio", "cam_vaf";
-		qcom,cam-vreg-name = "pm8916_l17", "pm8916_l2", "pm8916_l6", "pm8916_l10";
 		qcom,cam-vreg-type = <0 0 0 0>;
 		qcom,cam-vreg-min-voltage = <2850000 1200000 1800000 2800000>;
 		qcom,cam-vreg-max-voltage = <2850000 1200000 1800000 2800000>;
@@ -240,8 +239,6 @@
 
 		cam_vana-supply = <&pm8916_l17>;
 		cam_vdig-supply = <&pm8916_l2>;
-		cam_vio-supply = <&pm8916_l6>;
-		cam_vaf-supply = <&pm8916_l10>;
 		qcom,cam-vreg-name = "cam_vdig", "cam_vana";
 		qcom,cam-vreg-type = <0 0>;
 		qcom,cam-vreg-min-voltage = <1200000 2800000>;
@@ -448,9 +445,6 @@
 		qcom,actuator-src = <&actuator_0>;
 		qcom,eeprom-src = <&eeprom_0>;
 		qcom,led-flash-src = <&led_flash_0>;
-		cam_vana-supply = <&pm8916_l17>;
-		cam_vdig-supply = <&pm8916_l2>;
-		cam_vio-supply = <&pm8916_l6>;
 		cam_vaf-supply = <&pm8916_l10>;
 		qcom,cam-vreg-name = "cam_vaf";
 		qcom,cam-vreg-type = <0 0 0>;
@@ -499,8 +493,6 @@
 		qcom,eeprom-src = <&eeprom_1>;
 		cam_vana-supply = <&pm8916_l17>;
 		cam_vdig-supply = <&pm8916_l2>;
-		cam_vio-supply = <&pm8916_l6>;
-		cam_vaf-supply = <&pm8916_l10>;
 		qcom,cam-vreg-name = "cam_vdig", "cam_vana";
 		qcom,cam-vreg-type = <0 0>;
 		qcom,cam-vreg-min-voltage = <1200000 2800000>;
@@ -548,9 +540,6 @@
 		qcom,actuator-src = <&actuator_0>;
 		qcom,eeprom-src = <&eeprom_2>;
 		qcom,led-flash-src = <&led_flash_0>;
-		cam_vana-supply = <&pm8916_l17>;
-		cam_vdig-supply = <&pm8916_l2>;
-		cam_vio-supply = <&pm8916_l6>;
 		cam_vaf-supply = <&pm8916_l10>;
 		qcom,cam-vreg-name = "cam_vaf";
 		qcom,cam-vreg-type = <0 0 0>;
@@ -599,9 +588,6 @@
 		qcom,actuator-src = <&actuator_0>;
 		qcom,eeprom-src = <&eeprom_3>;
 		qcom,led-flash-src = <&led_flash_0>;
-		cam_vana-supply = <&pm8916_l17>;
-		cam_vdig-supply = <&pm8916_l2>;
-		cam_vio-supply = <&pm8916_l6>;
 		cam_vaf-supply = <&pm8916_l10>;
 		qcom,cam-vreg-name = "cam_vaf";
 		qcom,cam-vreg-type = <0 0 0>;
