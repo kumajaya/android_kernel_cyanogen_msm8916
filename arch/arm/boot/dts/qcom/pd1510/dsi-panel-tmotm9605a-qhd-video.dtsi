@@ -47,7 +47,7 @@
 		qcom,mdss-dsi-lane-0-state;
 		qcom,mdss-dsi-lane-1-state;
 		qcom,mdss-dsi-hbp-power-mode;
-		qcom,mdss-dsi-lp11-init = <0x1>;
+		qcom,mdss-dsi-lp11-init;
 		qcom,mdss-dsi-init-delay-us = <0xc350>;
 		qcom,mdss-dsi-panel-timings = <0x871c1200 0x42441820 0x17030400>;
 		qcom,mdss-dsi-t-clk-post = <0x4>;

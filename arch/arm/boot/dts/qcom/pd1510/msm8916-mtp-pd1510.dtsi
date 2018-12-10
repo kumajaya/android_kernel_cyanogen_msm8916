@@ -183,7 +183,7 @@
 
 			qcom,float-voltage-mv = <4360>;
 			qcom,recharge-mv = <100>;
-			qcom,recharge-disabled = <1>;
+			qcom,recharge-disabled;
 			regulator-name = "smb358_otg_vreg";
 			qcom,thermal-mitigation = <1300 700 600 0>;
 			qcom,fastchg-current-max-ma = <1300>;
@@ -337,9 +337,9 @@
 			st,axis-map-y = <0>;
 			st,axis-map-z = <2>;
 			st,g-range = <2>;
-			st,negate-x = <0>;
-			st,negate-y = <1>;
-			st,negate-z = <0>;
+			/*st,negate-x;*/ /*Disabled boolean property*/
+			st,negate-y; /*Enabled boolean property*/
+			/*st,negate-z;*/ /*Disabled boolean property*/
 			st,gpio-int1 = <&msm_gpio 21 0x2002>;
 			status = "disabled";
 		};
