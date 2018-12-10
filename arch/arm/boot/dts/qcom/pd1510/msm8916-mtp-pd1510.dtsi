@@ -83,46 +83,25 @@
 		};
 	};
 
-	goodix_ts_int_default {
+	goodix_ts_int {
 		qcom,pins = <&gp 13>;
 		qcom,pin-func = <0>;
 		qcom,num-grp-pins = <1>;
-		label = "goodix_ts_int_default";
+		label = "goodix_ts_int";
 
 		gdix_ts_int_default: gdix_ts_int_default {
 			drive-strength = <16>;
 			input-enable;
 			bias-disable;
 		};
-	};
-
-	goodix_ts_int_output_high {
-		qcom,pins = <&gp 13>;
-		qcom,pin-func = <0>;
-		qcom,num-grp-pins = <1>;
-		label = "goodix_ts_int_output_high";
 
 		gdix_ts_int_output_high: gdix_ts_int_output_high {
 			output-high;
 		};
-	};
-
-	goodix_ts_int_output_low {
-		qcom,pins = <&gp 13>;
-		qcom,pin-func = <0>;
-		qcom,num-grp-pins = <1>;
-		label = "goodix_ts_int_output_low";
 
 		gdix_ts_int_output_low: gdix_ts_int_output_low {
 			output-low;
 		};
-	};
-
-	goodix_ts_int_input {
-		qcom,pins = <&gp 13>;
-		qcom,pin-func = <0>;
-		qcom,num-grp-pins = <1>;
-		label = "goodix_ts_int_input";
 
 		gdix_ts_int_input: gdix_ts_int_input {
 			input-enable;
@@ -130,46 +109,25 @@
 		};
 	};
 
-	goodix_ts_rst_default {
+	goodix_ts_rst {
 		qcom,pins = <&gp 12>;
 		qcom,pin-func = <0>;
 		qcom,num-grp-pins = <1>;
-		label = "goodix_ts_rst_default";
+		label = "goodix_ts_rst";
 
 		gdix_ts_rst_default: gdix_ts_rst_default {
 			drive-strength = <16>;
 			input-enable;
 			bias-disable;
 		};
-	};
-
-	goodix_ts_rst_output_high {
-		qcom,pins = <&gp 12>;
-		qcom,pin-func = <0>;
-		qcom,num-grp-pins = <1>;
-		label = "goodix_ts_rst_output_high";
 
 		gdix_ts_rst_output_high: gdix_ts_rst_output_high {
 			output-high;
 		};
-	};
-
-	goodix_ts_rst_output_low {
-		qcom,pins = <&gp 12>;
-		qcom,pin-func = <0>;
-		qcom,num-grp-pins = <1>;
-		label = "goodix_ts_rst_output_low";
 
 		gdix_ts_rst_output_low: gdix_ts_rst_output_low {
 			output-low;
 		};
-	};
-
-	goodix_ts_rst_input {
-		qcom,pins = <&gp 12>;
-		qcom,pin-func = <0>;
-		qcom,num-grp-pins = <1>;
-		label = "goodix_ts_rst_input";
 
 		gdix_ts_rst_input: gdix_ts_rst_input {
 			input-enable;
@@ -314,9 +272,9 @@
 			irq-flags = <1>;
 			vdd_ana-supply = <&pm8916_l16>;
 			vcc_i2c-supply = <&pm8916_l6>;
-			touchscreen-max-id = <5>;
+			touchscreen-max-id = <11>;
 			touchscreen-size-x = <540>;
-			touchscreen-size-y = <1031>;
+			touchscreen-size-y = <960>;
 			touchscreen-max-w = <512>;
 			touchscreen-max-p = <512>;
 			touchscreen-key-map = <158>, <102>, <139>; /*KEY_BACK=158，KEY_HOMEPAGE=102, KEY_MENU=139*/
@@ -452,7 +410,7 @@
 
 	gen-vkeys {
 		compatible = "qcom,gen-vkeys";
-		label = "gt9xx_ts";
+		label = "goodix-ts";
 		qcom,disp-maxx = <540>;
 		qcom,disp-maxy = <960>;
 		qcom,panel-maxx = <540>;
