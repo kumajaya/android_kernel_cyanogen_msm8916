@@ -343,8 +343,13 @@ struct sensor_regulator {
 };
 
 struct sensor_regulator lis3dh_acc_vreg[] = {
+#ifdef CONFIG_MACH_PD1510
+	{NULL, "vdd", 2850000, 2850000},
+	{NULL, "vddio", 1800000, 1800000},
+#else
 	{NULL, "vdd", 1700000, 3600000},
 	{NULL, "vddio", 1700000, 3600000},
+#endif
 };
 
 static int lis3dh_acc_get_calibrate(struct lis3dh_acc_data *acc,
