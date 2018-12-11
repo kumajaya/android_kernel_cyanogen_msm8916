@@ -306,19 +306,18 @@
 		/delete-node/ akm@c;
 
 		taos@39 {
-			compatible = "amstaos,tmd2772";
+			compatible = "ams,tmd2772";
 			reg = <0x39>;
 			interrupt-parent = <&msm_gpio>;
-			interrupts = <113 0x0>;
-			pinctrl-names = "default";
+			interrupts = <113 0x2002>;
+			pinctrl-names = "tmd2772_default","tmd2772_sleep";
 			pinctrl-0 = <&apds99xx_default>;
+			pinctrl-1 = <&apds99xx_sleep>;
 			vdd-supply = <&pm8916_l17>;
-			vddio-supply = <&pm8916_l6>;
-			/*taos,pdrive = <3>;
-			taos,ppcount = <8>;
-			taos,irq_gpio = <113>;*/
-			amstaos,prox_diode = <0x20>;
-			amstaos,prox_power = <0x00>;
+			vio-supply = <&pm8916_l6>;
+			ams,irq-gpio = <&msm_gpio 113 0x2002>;
+			ams,pul_cnt = <12>;
+			ams,light-percent = <150>;
 		};
 
 		lis3dh_acc@18 {
