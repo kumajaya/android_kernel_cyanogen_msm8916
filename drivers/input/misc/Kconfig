@@ -1050,11 +1050,5 @@ config SENSORS_YL_PARAMS
 	help
 	  If you say yes here you get support for Yulong/Coolpad's sensor
 	  calibration parameter driver.
-
-config TMD2771_PLSENSOR
-	tristate "TAOS tmd2771 P/L sensor"
-	depends on I2C
-	help
-	  This option enables support for the TAOS tmd2771 P/L sensor.
 endif
 
