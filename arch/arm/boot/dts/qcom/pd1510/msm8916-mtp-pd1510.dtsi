@@ -341,7 +341,7 @@
 			st,negate-y; /*Enabled boolean property*/
 			/*st,negate-z;*/ /*Disabled boolean property*/
 			st,gpio-int1 = <&msm_gpio 21 0x2002>;
-			status = "disabled";
+			/*status = "disabled";*/
 		};
 
 		alps007@0c {
