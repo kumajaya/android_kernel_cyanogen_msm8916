@@ -2206,12 +2206,31 @@ static int lis3dh_parse_dt(struct device *dev,
 }
 #endif
 
+#ifdef CONFIG_MACH_PD1510
+unsigned int recoverymode = 0;
+static int lis3dh_acc_get_recoverymode(char *str)
+{
+	if (strncmp(str, "1", 1) == 0)
+		recoverymode = 1;
+
+	return recoverymode;
+}
+__setup("recoverymode=", lis3dh_acc_get_recoverymode);
+#endif
+
 static int lis3dh_acc_probe(struct i2c_client *client,
 		const struct i2c_device_id *id)
 {
 
 	struct lis3dh_acc_data *acc;
 	int err = -1;
+
+#ifdef CONFIG_MACH_PD1510
+	if (recoverymode) {
+		pr_info("%s: Don't probe in recovery mode\n", __func__);
+		return err;
+	}
+#endif
 
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
 		dev_err(&client->dev, "client not i2c capable\n");
