@@ -411,10 +411,6 @@ static u8 gtp_get_points(struct goodix_ts_data *ts,
 		if (ts->pdata->swap_x2y)
 			GTP_SWAP(points[i].x, points[i].y);
 
-#ifdef CONFIG_MACH_PD1510
-		points[i].y = (1031*points[i].y)/960;
-#endif
-
 		dev_dbg(&ts->client->dev, "[%d][%d %d %d]\n",
 			points[i].id, points[i].x, points[i].y, points[i].p);
 
