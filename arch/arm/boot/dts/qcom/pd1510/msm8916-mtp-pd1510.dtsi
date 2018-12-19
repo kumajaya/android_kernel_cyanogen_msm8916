@@ -426,6 +426,22 @@
 		/delete-node/ camera_focus;
 		/delete-node/ camera_snapshot;
 	};
+
+	spk_vreg: regulator_spk {
+		compatible = "regulator-fixed";
+		regulator-name = "spk_vreg";
+		startup-delay-us = <0>;
+		enable-active-high;
+		gpio = <&msm_gpio 121 0>;
+	};
+};
+
+&pm8916_tombak_dig {
+	cdc-vdd-spkdrv-supply = <&spk_vreg>;
+	qcom,cdc-vdd-spkdrv-voltage = <5000000 5000000>;
+	qcom,cdc-vdd-spkdrv-current = <20000>;
+	qcom,cdc-on-demand-supplies = "cdc-vdd-mic-bias",
+			"cdc-vdd-spkdrv";
 };
 
 &sdc2_cd_off {
