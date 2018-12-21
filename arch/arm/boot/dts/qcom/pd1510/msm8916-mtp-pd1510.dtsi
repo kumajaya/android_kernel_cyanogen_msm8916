@@ -130,6 +130,15 @@
 			bias-disable;
 		};
 	};
+
+	usb-id-pin {
+		qcom,pins = <&gp 110>;
+
+		usbid_sleep: sleep {
+			drive-strength = <8>;
+			bias-disable = <0>;
+		};
+	};
 };
 
 &soc {
@@ -216,10 +225,11 @@
 		compatible = "qcom,i2c-msm-v2";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg-names = "qup_phys_addr";
-		reg = <0x78b7000 0x1000>;
-		interrupt-names = "qup_irq";
-		interrupts = <0 97 0>;
+		reg-names = "qup_phys_addr", "bam_phys_addr";
+		reg = <0x78b7000 0x1000>,
+		      <0x7884000 0x23000>;
+		interrupt-names = "qup_irq", "bam_irq";
+		interrupts = <0 97 0>, <0 238 0>;
 		qcom,clk-freq-out = <400000>;
 		qcom,clk-freq-in  = <19200000>;
 		clock-names = "iface_clk", "core_clk";
@@ -231,6 +241,8 @@
 		pinctrl-1 = <&i2c_3_sleep>;
 		qcom,noise-rjct-scl = <0>;
 		qcom,noise-rjct-sda = <0>;
+		qcom,bam-pipe-idx-cons = <8>;
+		qcom,bam-pipe-idx-prod = <9>;
 		dmas = <&dma_blsp1 8 64 0x20000020 0x20>,
 			<&dma_blsp1 9 32 0x20000020 0x20>;
 		dma-names = "tx", "rx";
@@ -506,7 +518,7 @@
 
 &pm8916_vadc {
 	chan@11 {
-		label = "usbid_vol";
+		label = "usbin";
 		reg = <0x11>;
 		qcom,decimation = <0>;
 		qcom,pre-div-channel-scaling = <0>;
@@ -517,7 +529,7 @@
 	};
 };
 
-&pm8916_l5 { /* For erratic touchscreen */
+&pm8916_l5 { /* For erratic smb358 */
 	regulator-always-on;
 };
 
@@ -555,4 +567,12 @@
 
 &pm8916_leds {
 	status = "disabled";
+};
+
+&spi_0 { /* BLSP1 QUP3 allocated for i2c_3 */
+	status = "disabled";
+
+	lattice,spi-usb@0 {
+		status = "disabled";
+	};
 };
