@@ -1908,7 +1908,12 @@ static int msm_otg_notify_power_supply(struct msm_otg *motg, unsigned mA)
 			goto psy_error;
 		if (power_supply_set_current_limit(psy, 1000*mA))
 			goto psy_error;
+#ifndef CONFIG_MACH_PD1510
 	} else if (motg->cur_power >= 0 && (mA == 0 || mA == 2)) {
+#else
+	} else if (motg->cur_power >= 0 && (mA == 0 || mA == 2) &&
+			(motg->chg_type == USB_INVALID_CHARGER)) {
+#endif
 		/* Disable charging */
 		if (power_supply_set_online(psy, false))
 			goto psy_error;
@@ -2233,6 +2238,9 @@ static void msm_hsusb_vbus_power(struct msm_otg *motg, bool on)
 #if !defined(CONFIG_MACH_JALEBI) && !defined(CONFIG_YL_BQ24157_CHARGER) && !defined(CONFIG_YL_FAN5405_CHARGER)
 		ret = regulator_enable(vbus_otg);
 #endif
+#ifdef CONFIG_MACH_PD1510
+		msleep(500);
+#endif
 		if (ret) {
 			pr_err("unable to enable vbus_otg\n");
 			return;
@@ -2250,6 +2258,13 @@ static void msm_hsusb_vbus_power(struct msm_otg *motg, bool on)
 #endif
 #if !defined(CONFIG_MACH_JALEBI) && !defined(CONFIG_YL_BQ24157_CHARGER) && !defined(CONFIG_YL_FAN5405_CHARGER)
 		ret = regulator_disable(vbus_otg);
+#endif
+#ifdef CONFIG_MACH_PD1510
+		if (ret) {
+			msleep(10);
+			ret = regulator_disable(vbus_otg);
+			msleep(5);
+		}
 #endif
 		if (ret) {
 			pr_err("unable to disable vbus_otg\n");
@@ -4796,6 +4811,7 @@ static int otg_power_set_property_usb(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_TYPE:
 		psy->type = val->intval;
 
+#ifndef CONFIG_MACH_PD1510
 		/*
 		 * If charger detection is done by the USB driver,
 		 * motg->chg_type is already assigned in the
@@ -4839,6 +4855,7 @@ static int otg_power_set_property_usb(struct power_supply *psy,
 			chg_to_string(motg->chg_type));
 		msm_otg_dbg_log_event(&motg->phy, "SET CHARGER TYPE ",
 				motg->chg_type, psy->type);
+#endif
 		break;
 	case POWER_SUPPLY_PROP_HEALTH:
 		motg->usbin_health = val->intval;
