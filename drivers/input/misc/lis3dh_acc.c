@@ -539,10 +539,16 @@ static int lis3dh_acc_i2c_write(struct lis3dh_acc_data *acc, u8 *buf, int len)
 static int lis3dh_acc_hw_init(struct lis3dh_acc_data *acc)
 {
 	int err = -1;
+	int i = 0;
 	u8 buf[7];
 
 	buf[0] = WHO_AM_I;
-	err = lis3dh_acc_i2c_read(acc, buf, 1);
+	for (i = 0; i < 3; i++) {
+		err = lis3dh_acc_i2c_read(acc, buf, 1);
+		if (err >= 0)
+			break;
+		msleep(10);
+	}
 	if (err < 0) {
 		dev_warn(&acc->client->dev,
 		"Error reading WHO_AM_I: is device available/working?\n");
@@ -2247,7 +2253,7 @@ static int lis3dh_acc_probe(struct i2c_client *client,
 		goto exit_check_functionality_failed;
 	}
 
-
+	memset(acc, 0, sizeof(struct lis3dh_acc_data));
 	mutex_init(&acc->lock);
 	mutex_lock(&acc->lock);
 
