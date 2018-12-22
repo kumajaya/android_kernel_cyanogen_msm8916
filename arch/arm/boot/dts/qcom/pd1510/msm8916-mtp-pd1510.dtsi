@@ -571,8 +571,4 @@
 
 &spi_0 { /* BLSP1 QUP3 allocated for i2c_3 */
 	status = "disabled";
-
-	lattice,spi-usb@0 {
-		status = "disabled";
-	};
 };
