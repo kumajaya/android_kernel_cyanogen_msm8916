@@ -11,13 +11,13 @@
 */
 
 qcom,desay-samsung-2260mAh-PD1410-VBMS-data {
-	qcom,fcc-mah = <0x8d4>;
-	qcom,default-rbatt-mohm = <0xb7>;
-	qcom,rbatt-capacitive-mohm = <0x32>;
-	qcom,max-voltage-uv = <0x426030>;
-	qcom,v-cutoff-uv = <0x33e140>;
-	qcom,chg-term-ua = <0x186a0>;
-	qcom,batt-id-kohm = <0x14>;
+	qcom,fcc-mah = <2260>;
+	qcom,default-rbatt-mohm = <183>;
+	qcom,rbatt-capacitive-mohm = <50>;
+	qcom,max-voltage-uv = <4350000>;
+	qcom,v-cutoff-uv = <3400000>;
+	qcom,chg-term-ua = <100000>;
+	qcom,batt-id-kohm = <20>;
 	qcom,battery-type = "b76-sam";
 
 	qcom,ibat-acc-lut {

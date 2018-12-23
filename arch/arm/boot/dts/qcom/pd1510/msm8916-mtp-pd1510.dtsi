@@ -555,7 +555,6 @@
 &pm8916_chg {
 	status = "ok";
 	qcom,resume-soc = <95>;
-	qcom,charging-disabled;
 	qcom,use-external-charger;
 };
 
@@ -563,6 +562,13 @@
 	status = "ok";
 	qcom,resume-soc = <95>;
 	qcom,battery-data = <&pd1510_batterydata>;
+	qcom,force-bms-active-on-charger;
+	qcom,max-voltage-uv = <4350000>;
+	qcom,v-cutoff-uv = <3400000>;
+	qcom,low-voltage-threshold = <3450000>;
+	qcom,low-voltage-calculate-soc-ms = <30000>;
+	qcom,low-soc-calculate-soc-ms = <70000>;
+	qcom,calculate-soc-ms = <100000>;
 };
 
 &pm8916_leds {

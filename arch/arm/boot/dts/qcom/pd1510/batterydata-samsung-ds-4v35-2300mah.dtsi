@@ -12,13 +12,13 @@
 
 qcom,samsung-ds-4v35-2300mah-batterydata {
 	qcom,battery-type = "samsung-ds";
-	qcom,batt-id-kohm = <0x64>;
-	qcom,chg-term-ua = <0x186a0>;
-	qcom,default-rbatt-mohm = <0xa2>;
-	qcom,fcc-mah = <0x8fc>;
-	qcom,max-voltage-uv = <0x426030>;
-	qcom,rbatt-capacitive-mohm = <0x32>;
-	qcom,v-cutoff-uv = <0x33e140>;
+	qcom,batt-id-kohm = <100>;
+	qcom,chg-term-ua = <100000>;
+	qcom,default-rbatt-mohm = <162>;
+	qcom,fcc-mah = <2300>;
+	qcom,max-voltage-uv = <4350000>;
+	qcom,rbatt-capacitive-mohm = <50>;
+	qcom,v-cutoff-uv = <3400000>;
 
 	qcom,fcc-temp-lut {
 		qcom,lut-col-legend = <0xffffffec 0x0 0xa 0x19 0x28 0x3c>;

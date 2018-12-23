@@ -11,14 +11,14 @@
 */
 
 qcom,b76-atl-4v35-2260mah-data {
-	qcom,fcc-mah = <0x8d4>;
-	qcom,default-rbatt-mohm = <0xaa>;
-	qcom,rbatt-capacitive-mohm = <0x32>;
-	qcom,flat-ocv-threshold-uv = <0x39fbc0>;
-	qcom,max-voltage-uv = <0x426030>;
-	qcom,v-cutoff-uv = <0x33e140>;
-	qcom,chg-term-ua = <0x186a0>;
-	qcom,batt-id-kohm = <0x32>;
+	qcom,fcc-mah = <2260>;
+	qcom,default-rbatt-mohm = <170>;
+	qcom,rbatt-capacitive-mohm = <50>;
+	qcom,flat-ocv-threshold-uv = <3800000>;
+	qcom,max-voltage-uv = <4350000>;
+	qcom,v-cutoff-uv = <3400000>;
+	qcom,chg-term-ua = <100000>;
+	qcom,batt-id-kohm = <50>;
 	qcom,battery-type = "b76-atl";
 
 	qcom,ibat-acc-lut {
